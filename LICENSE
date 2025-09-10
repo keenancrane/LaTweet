@@ -1,0 +1,26 @@
+LICENSE
+
+This project contains software licensed under multiple licenses as described below.
+
+Full license texts are available at:
+• Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0
+• MIT License: https://opensource.org/licenses/MIT
+
+================================================================================
+PRIMARY LICENSE - This Project
+================================================================================
+
+Copyright (c) 2025 Keenan Crane
+
+Licensed under the MIT License.
+
+================================================================================
+THIRD-PARTY COMPONENTS
+================================================================================
+
+This project incorporates the following third-party components:
+
+• (Apache License 2.0) twitter-text - Copyright (c) 2012-2020 Twitter, Inc and other contributors
+• (MIT License) unicode-formatter - Copyright (c) 2020 DenverCoder1
+• (MIT License) Library C - Copyright (c) 2020 Sven Kreiss, Kyle Cranmer and contributors
+
