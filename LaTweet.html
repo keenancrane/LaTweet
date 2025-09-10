@@ -612,7 +612,7 @@
     <div class="container">
         <div class="header">
            <p><img src="logo.svg" width="200"></p>
-            <p>Long-form microblogging tool with rich text and LaTeX.</p>
+            <p>Long-form microblog authoring tool with rich text and LaTeX.</p>
         </div>
         
         <div class="controls">
@@ -633,6 +633,12 @@
                     <option value="n">[&lt;i&gt;/n]</option>
                     <option value="total">[&lt;i&gt;/&lt;N&gt;]</option>
                 </select>
+            </div>
+            <div class="platform-selector">
+                <label for="smartBreaking">
+                    <input type="checkbox" id="smartBreaking" checked>
+                    Smart breaking
+                </label>
             </div>
             <div class="theme-toggle">
                 <label for="darkMode">
@@ -959,6 +965,96 @@
             return result;
         }
         
+        // Smart breaking utilities
+        function isInMathMode(text, position) {
+            // Count math delimiters before position
+            let dollarCount = 0;
+            let parenCount = 0;
+            
+            for (let i = 0; i < position; i++) {
+                if (text[i] === '$' && (i === 0 || text[i-1] !== '\\')) {
+                    dollarCount++;
+                } else if (i < position - 1 && text.substr(i, 2) === '\\(' && (i === 0 || text[i-1] !== '\\')) {
+                    parenCount++;
+                } else if (i < position - 1 && text.substr(i, 2) === '\\)' && (i === 0 || text[i-1] !== '\\')) {
+                    parenCount--;
+                }
+            }
+            
+            return (dollarCount % 2 === 1) || (parenCount > 0);
+        }
+        
+        function isInTextCommand(text, position) {
+            // Look for unclosed text commands before position
+            const textCommands = ['\\textbf{', '\\textit{', '\\emph{', '\\texttt{'];
+            let openCommands = 0;
+            
+            for (let i = 0; i < position; i++) {
+                for (const cmd of textCommands) {
+                    if (text.substr(i, cmd.length) === cmd) {
+                        openCommands++;
+                        i += cmd.length - 1;
+                        break;
+                    }
+                }
+                if (text[i] === '}' && openCommands > 0) {
+                    openCommands--;
+                }
+            }
+            
+            return openCommands > 0;
+        }
+        
+        function shouldDelayBreaking(text) {
+            const length = text.length;
+            return isInMathMode(text, length) || isInTextCommand(text, length);
+        }
+        
+        function findLastWordBoundary(text) {
+            // Find the last word boundary, but don't break inside math expressions or text commands
+            const wordBoundaryRegex = /[\s\-\u2013\u2014]/; // whitespace, hyphen, en-dash, em-dash
+            
+            for (let i = text.length - 1; i >= 0; i--) {
+                if (wordBoundaryRegex.test(text[i])) {
+                    // Check if this boundary is inside a math expression or text command
+                    if (isInMathMode(text, i) || isInTextCommand(text, i)) {
+                        // Skip this boundary - it's inside a protected region
+                        continue;
+                    }
+                    // Found a valid boundary, return position after it (start of last word/expression)
+                    return i + 1;
+                }
+            }
+            
+            // No word boundary found, return 0 (whole text is one word)
+            return 0;
+        }
+        
+        function performSmartBreaking(boxId, editor, newBox) {
+            const input = editor.getValue();
+            
+            // Find the last word boundary
+            const lastWordStart = findLastWordBoundary(input);
+            
+            // If no word boundary found or it's at the beginning, do character-based splitting
+            if (lastWordStart === 0) {
+                return;
+            }
+            
+            // Split the text
+            const firstPart = input.substring(0, lastWordStart);
+            const secondPart = input.substring(lastWordStart);
+            
+            // Update the current box with the first part
+            editor.setValue(firstPart);
+            
+            // Set the second part in the new box
+            newBox.editor.setValue(secondPart);
+            
+            // Position cursor at the end of the moved text in the new box
+            newBox.editor.setCursor(newBox.editor.lineCount(), 0);
+        }
+
         // Get enumeration string for a thread box
         function getEnumerationString(boxId) {
             const enumerationType = document.getElementById('enumerate').value;
@@ -1146,10 +1242,26 @@
             // Auto-create new box if we hit the limit AND we're in the final box
             const isLastBox = boxId === threadBoxes[threadBoxes.length - 1].id;
             
-            if (charCount >= limit && isLastBox) {
+            if (charCount > limit && isLastBox) {
+                const input = editor.getValue();
+                
+                // Delay breaking if we're in math mode or unclosed text command
+                if (shouldDelayBreaking(input)) {
+                    // Don't create new box yet - wait until math/command is closed
+                    return;
+                }
+                
                 const newBox = createThreadBox();
-                // Small delay to ensure the box is created before focusing
-                setTimeout(() => newBox.editor.focus(), 100);
+                
+                // Apply smart breaking if enabled (we already know we exceed the limit)
+                const smartBreakingEnabled = document.getElementById('smartBreaking').checked;
+                
+                if (smartBreakingEnabled) {
+                    performSmartBreaking(boxId, editor, newBox);
+                } else {
+                    // Default behavior: just focus the new box
+                    setTimeout(() => newBox.editor.focus(), 100);
+                }
             }
         }
         

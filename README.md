@@ -2,4 +2,4 @@
   <img width="400" src="logo-readme.svg">
 </p>
 
-Long-form microblogging tool with rich text and LaTeX.
+Long-form microblog authoring tool with rich text and LaTeX.
