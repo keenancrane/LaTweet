@@ -1,3 +1,5 @@
-# LaTweet!
+<p align="center">
+  <img width="400" src="logo-readme.svg">
+</p>
 
-Web-based authoring tool for multipart microblogging posts, including math + text formatting.
+Long-form microblogging tool with rich text and LaTeX.
