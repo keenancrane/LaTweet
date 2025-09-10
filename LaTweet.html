@@ -311,6 +311,17 @@
             word-wrap: break-word;
         }
         
+        .output-box a {
+            color: #667eea;
+            text-decoration: underline;
+            word-break: break-all;
+        }
+        
+        .output-box a:hover {
+            color: #5a6fd8;
+            text-decoration: none;
+        }
+        
         .char-counter {
             position: absolute;
             bottom: 8px;
@@ -528,6 +539,14 @@
             background: #404040;
             border: 2px solid #555;
             color: #e0e0e0;
+        }
+        
+        body.dark-mode .output-box a {
+            color: #8bb5ff;
+        }
+        
+        body.dark-mode .output-box a:hover {
+            color: #a5c7ff;
         }
         
         body.dark-mode .char-counter {
@@ -1110,6 +1129,24 @@
                 handleInputChange(currentBox.id, currentEditor);
             }
         }
+        
+        function makeUrlsClickable(text) {
+            // Escape HTML characters first to prevent XSS
+            const escapedText = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+            
+            // URL detection regex (similar to the one used in Twitter character counting)
+            const urlRegex = /(https?:\/\/[^\s<>"\[\]]+)/gi;
+            
+            // Replace URLs with clickable links
+            return escapedText.replace(urlRegex, (url) => {
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+            });
+        }
 
         // Get enumeration string for a thread box
         function getEnumerationString(boxId) {
@@ -1285,7 +1322,9 @@
             const outputElement = document.getElementById(`output-${boxId}`);
             const counterElement = document.getElementById(`counter-${boxId}`);
             
-            outputElement.textContent = output;
+            // Make URLs clickable and set as HTML
+            const htmlOutput = makeUrlsClickable(output);
+            outputElement.innerHTML = htmlOutput;
             
             const box = threadBoxes.find(b => b.id === boxId);
             const platform = document.getElementById('platform').value;
@@ -1407,8 +1446,8 @@
         }
         
         function copyToClipboard(boxId) {
-            const outputElement = document.getElementById(`output-${boxId}`);
-            const text = outputElement.textContent;
+            // Get the plain text version (not HTML with links)
+            const text = getUnicodeOutputWithEnumeration(boxId);
             
             navigator.clipboard.writeText(text).then(() => {
                 const copyBtn = document.querySelector(`[data-box-id="${boxId}"] .copy-btn`);
