@@ -27,9 +27,10 @@ Should work in most browsers with JavaScript enabled. No installation required -
 - **Manual Control**: Add, delete, and reorder posts anywhere in your thread
 
 ### **Quality of Life**
+- **Image Support**: Drag-and-drop or paste images directly into posts
 - **Enumeration**: Optionally number your posts with `[1/n]` or `[1/3]` patterns
 - **Clickable URLs**: URLs automatically become clickable links in the preview
-- **Copy to Clipboard**: One-click copying of formatted text
+- **Copy to Clipboard**: One-click copying of formatted text and images
 - **Paste & Split**: Paste large text blocks and automatically split into threads
 - **Syntax Highlighting**: CodeMirror editor with LaTeX syntax highlighting
 

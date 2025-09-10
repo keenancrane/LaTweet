@@ -1758,6 +1758,27 @@
             }
         });
         
+        // Prevent accidental data loss
+        function hasContent() {
+            return threadBoxes.some(box => {
+                if (box.editor && box.editor.getValue().trim()) {
+                    return true;
+                }
+                if (box.image) {
+                    return true;
+                }
+                return false;
+            });
+        }
+        
+        window.addEventListener('beforeunload', function(e) {
+            if (hasContent()) {
+                e.preventDefault();
+                e.returnValue = ''; // Chrome requires returnValue to be set
+                return ''; // Some browsers require a return value
+            }
+        });
+        
         // Initialize with first thread box and dark mode
         document.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
