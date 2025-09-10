@@ -969,7 +969,16 @@
         function convertLatexToUnicode(input) {
             let result = input;
             
-            // Process math delimiters \( ... \) and $ ... $
+            // Process display math delimiters \[ ... \]
+            result = result.replace(/\s*\\\[\s*(.*?)\s*\\\]\s*/gs, (match, mathContent) => {
+                // Strip internal newlines and whitespace, then process
+                const cleanMathContent = mathContent.replace(/\s+/g, ' ').trim();
+                const processedMath = processMathContent(cleanMathContent);
+                // Add two newlines before/after and ideographic spaces for centering
+                return `\n\n　　${processedMath}\n\n`;
+            });
+            
+            // Process inline math delimiters \( ... \) and $ ... $
             result = result.replace(/\\\((.*?)\\\)/g, (match, mathContent) => {
                 return processMathContent(mathContent);
             });
@@ -989,6 +998,7 @@
             // Count math delimiters before position
             let dollarCount = 0;
             let inParenMath = false;
+            let inDisplayMath = false;
             
             for (let i = 0; i < position; i++) {
                 if (text[i] === '$' && (i === 0 || text[i-1] !== '\\')) {
@@ -999,10 +1009,16 @@
                 } else if (i < position - 1 && text.substr(i, 2) === '\\)' && (i === 0 || text[i-1] !== '\\')) {
                     inParenMath = false;
                     i++; // Skip the next character since we consumed '\)'
+                } else if (i < position - 1 && text.substr(i, 2) === '\\[' && (i === 0 || text[i-1] !== '\\')) {
+                    inDisplayMath = true;
+                    i++; // Skip the next character since we consumed '\['
+                } else if (i < position - 1 && text.substr(i, 2) === '\\]' && (i === 0 || text[i-1] !== '\\')) {
+                    inDisplayMath = false;
+                    i++; // Skip the next character since we consumed '\]'
                 }
             }
             
-            return (dollarCount % 2 === 1) || inParenMath;
+            return (dollarCount % 2 === 1) || inParenMath || inDisplayMath;
         }
         
         function isInTextCommand(text, position) {
