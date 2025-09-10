@@ -951,7 +951,7 @@
             let result = input;
             
             // Process math delimiters \( ... \) and $ ... $
-            result = result.replace(/\\\(([^\\]*(?:\\.[^\\]*)*)\\\)/g, (match, mathContent) => {
+            result = result.replace(/\\\((.*?)\\\)/g, (match, mathContent) => {
                 return processMathContent(mathContent);
             });
             
@@ -969,19 +969,21 @@
         function isInMathMode(text, position) {
             // Count math delimiters before position
             let dollarCount = 0;
-            let parenCount = 0;
+            let inParenMath = false;
             
             for (let i = 0; i < position; i++) {
                 if (text[i] === '$' && (i === 0 || text[i-1] !== '\\')) {
                     dollarCount++;
                 } else if (i < position - 1 && text.substr(i, 2) === '\\(' && (i === 0 || text[i-1] !== '\\')) {
-                    parenCount++;
+                    inParenMath = true;
+                    i++; // Skip the next character since we consumed '\('
                 } else if (i < position - 1 && text.substr(i, 2) === '\\)' && (i === 0 || text[i-1] !== '\\')) {
-                    parenCount--;
+                    inParenMath = false;
+                    i++; // Skip the next character since we consumed '\)'
                 }
             }
             
-            return (dollarCount % 2 === 1) || (parenCount > 0);
+            return (dollarCount % 2 === 1) || inParenMath;
         }
         
         function isInTextCommand(text, position) {
@@ -1053,6 +1055,60 @@
             
             // Position cursor at the end of the moved text in the new box
             newBox.editor.setCursor(newBox.editor.lineCount(), 0);
+        }
+        
+        function handlePasteEvent(boxId, editor, changeObj) {
+            const smartBreakingEnabled = document.getElementById('smartBreaking').checked;
+            const isLastBox = boxId === threadBoxes[threadBoxes.length - 1].id;
+            const cursor = editor.getCursor();
+            const isAtEnd = cursor.line === editor.lineCount() - 1 && cursor.ch === editor.getLine(cursor.line).length;
+            
+            // Only apply smart breaking for paste if:
+            // 1. Smart breaking is enabled
+            // 2. We're in the final box 
+            // 3. Cursor is at the end
+            if (!smartBreakingEnabled || !isLastBox || !isAtEnd) {
+                // Let the paste happen normally
+                return;
+            }
+            
+            // Cancel the original paste
+            changeObj.cancel();
+            
+            // Get the pasted text
+            const pastedText = changeObj.text.join('\n');
+            
+            // Simulate typing character by character
+            simulateTyping(boxId, editor, pastedText);
+        }
+        
+        function simulateTyping(initialBoxId, initialEditor, text) {
+            let currentText = '';
+            
+            // Add characters one by one and check for breaking after each
+            for (let i = 0; i < text.length; i++) {
+                currentText += text[i];
+                
+                // Find the current active box (last box in thread)
+                const currentBox = threadBoxes[threadBoxes.length - 1];
+                const currentEditor = currentBox.editor;
+                
+                // Get current content and add the new character
+                const currentContent = currentEditor.getValue();
+                const newContent = currentContent + text[i];
+                
+                // Set the new content
+                currentEditor.setValue(newContent);
+                
+                // Position cursor at the end
+                const doc = currentEditor.getDoc();
+                const lastLine = doc.lastLine();
+                const lastLineLength = doc.getLine(lastLine).length;
+                currentEditor.setCursor(lastLine, lastLineLength);
+                
+                // Manually trigger the input change handling
+                handleInputChange(currentBox.id, currentEditor);
+            }
         }
 
         // Get enumeration string for a thread box
@@ -1163,6 +1219,13 @@
             // Set up event handlers
             editor.on('change', () => handleInputChange(boxId, editor));
             
+            // Handle paste events for smart breaking
+            editor.on('beforeChange', (instance, changeObj) => {
+                if (changeObj.origin === 'paste') {
+                    handlePasteEvent(boxId, editor, changeObj);
+                }
+            });
+            
             // Update the box info with the editor
             const boxInfo = threadBoxes.find(box => box.id === boxId);
             boxInfo.editor = editor;
@@ -1239,10 +1302,12 @@
                 counterElement.className += ' near-limit';
             }
             
-            // Auto-create new box if we hit the limit AND we're in the final box
+            // Auto-create new box if we hit the limit AND we're in the final box AND cursor is at the end
             const isLastBox = boxId === threadBoxes[threadBoxes.length - 1].id;
+            const cursor = editor.getCursor();
+            const isAtEnd = cursor.line === editor.lineCount() - 1 && cursor.ch === editor.getLine(cursor.line).length;
             
-            if (charCount > limit && isLastBox) {
+            if (charCount > limit && isLastBox && isAtEnd) {
                 const input = editor.getValue();
                 
                 // Delay breaking if we're in math mode or unclosed text command
