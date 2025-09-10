@@ -359,6 +359,60 @@
             margin-top: 15px;
         }
         
+        .image-section {
+            margin-top: 15px;
+        }
+        
+        .image-container {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            background: #fafafa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100px;
+            position: relative;
+        }
+        
+        .image-container img {
+            max-width: 100%;
+            max-height: 300px;
+            height: auto;
+            width: auto;
+            border-radius: 4px;
+        }
+        
+        .remove-image-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10;
+            transition: all 0.2s ease;
+        }
+        
+        .remove-image-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+            transform: scale(1.1);
+        }
+        
+        .editor-section.drag-over {
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px dashed #667eea;
+        }
+        
         .thread-separator {
             height: 1px;
             background: #e0e0e0;
@@ -547,6 +601,25 @@
         
         body.dark-mode .output-box a:hover {
             color: #a5c7ff;
+        }
+        
+        body.dark-mode .image-container {
+            background: #404040;
+            border: 2px solid #555;
+        }
+        
+        body.dark-mode .editor-section.drag-over {
+            background: rgba(139, 181, 255, 0.1);
+            border: 2px dashed #8bb5ff;
+        }
+        
+        body.dark-mode .remove-image-btn {
+            background: rgba(255, 255, 255, 0.5);
+            color: black;
+        }
+        
+        body.dark-mode .remove-image-btn:hover {
+            background: rgba(255, 255, 255, 0.7);
         }
         
         body.dark-mode .char-counter {
@@ -1163,6 +1236,141 @@
                 return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
             });
         }
+        
+        // Image handling functions
+        function setupImageDragDrop(boxId) {
+            const editorSection = document.querySelector(`[data-box-id="${boxId}"] .editor-section`);
+            
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                editorSection.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            // Highlight drop area
+            ['dragenter', 'dragover'].forEach(eventName => {
+                editorSection.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                editorSection.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight(e) {
+                editorSection.classList.add('drag-over');
+            }
+            
+            function unhighlight(e) {
+                editorSection.classList.remove('drag-over');
+            }
+            
+            // Handle dropped files
+            editorSection.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.type.startsWith('image/')) {
+                        attachImage(boxId, file);
+                    }
+                }
+            }
+            
+            // Handle image paste
+            const box = threadBoxes.find(b => b.id === boxId);
+            box.editor.getWrapperElement().addEventListener('paste', function(e) {
+                const items = e.clipboardData.items;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.startsWith('image/')) {
+                        e.preventDefault();
+                        const file = items[i].getAsFile();
+                        attachImage(boxId, file);
+                        break;
+                    }
+                }
+            });
+        }
+        
+        function attachImage(boxId, file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const box = threadBoxes.find(b => b.id === boxId);
+                box.image = e.target.result;
+                
+                // Update the display
+                const imageSection = document.getElementById(`image-section-${boxId}`);
+                const imageElement = document.getElementById(`image-${boxId}`);
+                
+                imageElement.src = e.target.result;
+                imageSection.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function removeImage(boxId) {
+            const box = threadBoxes.find(b => b.id === boxId);
+            box.image = null;
+            
+            // Hide the image section
+            const imageSection = document.getElementById(`image-section-${boxId}`);
+            imageSection.style.display = 'none';
+            
+            // Clear the image source
+            const imageElement = document.getElementById(`image-${boxId}`);
+            imageElement.src = '';
+        }
+        
+        async function copyImageToClipboard(boxId) {
+            const box = threadBoxes.find(b => b.id === boxId);
+            if (!box.image) return;
+            
+            try {
+                // Convert base64 to blob
+                const response = await fetch(box.image);
+                const blob = await response.blob();
+                
+                // Copy to clipboard
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        [blob.type]: blob
+                    })
+                ]);
+                
+                // Show success feedback
+                const copyBtn = document.querySelector(`[data-box-id="${boxId}"] .image-section .copy-btn`);
+                const originalContent = copyBtn.innerHTML;
+                const originalTitle = copyBtn.title;
+                
+                copyBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20,6 9,17 4,12"></polyline>
+                    </svg>
+                `;
+                copyBtn.title = 'Copied!';
+                copyBtn.style.color = '#2ed573';
+                copyBtn.style.borderColor = '#2ed573';
+                copyBtn.style.background = '#f0f9f4';
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalContent;
+                    copyBtn.title = originalTitle;
+                    copyBtn.style.color = '';
+                    copyBtn.style.borderColor = '';
+                    copyBtn.style.background = '';
+                }, 1500);
+                
+            } catch (err) {
+                console.error('Failed to copy image: ', err);
+                alert('Failed to copy image to clipboard');
+            }
+        }
 
         // Get enumeration string for a thread box
         function getEnumerationString(boxId) {
@@ -1221,6 +1429,21 @@
                         <div class="output-box" id="output-${boxId}"></div>
                         <div class="char-counter" id="counter-${boxId}">0</div>
                     </div>
+                    <div class="image-section" id="image-section-${boxId}" style="display: none;">
+                        <div class="output-header">
+                            <label>Image:</label>
+                            <button class="copy-btn" onclick="copyImageToClipboard(${boxId})" title="Copy image to clipboard">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="m5 15v-11a2 2 0 0 1 2 -2h11"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="image-container">
+                            <img id="image-${boxId}" src="" alt="Attached image" />
+                            <button class="remove-image-btn" onclick="removeImage(${boxId})" title="Remove image">×</button>
+                        </div>
+                    </div>
                 </div>
             `;
             
@@ -1229,7 +1452,8 @@
                 id: boxId,
                 element: boxElement,
                 editor: null, // Will be set after CodeMirror is initialized
-                limit: limit
+                limit: limit,
+                image: null // Will store base64 image data when attached
             };
             
             if (insertAfter === null) {
@@ -1282,6 +1506,9 @@
             // Update the box info with the editor
             const boxInfo = threadBoxes.find(box => box.id === boxId);
             boxInfo.editor = editor;
+            
+            // Set up drag and drop for images (after editor is assigned)
+            setupImageDragDrop(boxId);
             
             // Focus the new editor
             editor.focus();
