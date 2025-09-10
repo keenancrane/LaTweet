@@ -612,7 +612,7 @@
     <div class="container">
         <div class="header">
            <p><img src="logo.svg" width="200"></p>
-            <p>Long-form microblogging tool with rich text and LaTeX</p>
+            <p>Long-form microblogging tool with rich text and LaTeX.</p>
         </div>
         
         <div class="controls">
@@ -624,6 +624,14 @@
                     <option value="bluesky">BlueSky (300 chars)</option>
                     <option value="mastodon">Mastodon (500 chars)</option>
                     <option value="truth">Truth Social (500 chars)</option>
+                </select>
+            </div>
+            <div class="platform-selector">
+                <label for="enumerate">Enumerate:</label>
+                <select id="enumerate">
+                    <option value="none">None</option>
+                    <option value="n">[&lt;i&gt;/n]</option>
+                    <option value="total">[&lt;i&gt;/&lt;N&gt;]</option>
                 </select>
             </div>
             <div class="theme-toggle">
@@ -951,6 +959,26 @@
             return result;
         }
         
+        // Get enumeration string for a thread box
+        function getEnumerationString(boxId) {
+            const enumerationType = document.getElementById('enumerate').value;
+            if (enumerationType === 'none') {
+                return '';
+            }
+            
+            const boxIndex = threadBoxes.findIndex(box => box.id === boxId);
+            const currentNumber = boxIndex + 1;
+            
+            if (enumerationType === 'n') {
+                return ` [${currentNumber}/n]`;
+            } else if (enumerationType === 'total') {
+                const totalBoxes = threadBoxes.length;
+                return ` [${currentNumber}/${totalBoxes}]`;
+            }
+            
+            return '';
+        }
+
         // Thread box management
         function createThreadBox(insertAfter = null) {
             const boxId = nextBoxId++;
@@ -1092,7 +1120,9 @@
         
         function handleInputChange(boxId, editor) {
             const input = editor.getValue();
-            const output = convertLatexToUnicode(input);
+            const baseOutput = convertLatexToUnicode(input);
+            const enumeration = getEnumerationString(boxId);
+            const output = baseOutput + enumeration;
             const outputElement = document.getElementById(`output-${boxId}`);
             const counterElement = document.getElementById(`counter-${boxId}`);
             
@@ -1130,6 +1160,17 @@
                 const totalCountElement = box.element.querySelector('.total-count');
                 boxCountElement.textContent = index + 1;
                 totalCountElement.textContent = total;
+            });
+            
+            // Update all outputs since enumeration depends on box position and total count
+            updateAllEnumeratedOutputs();
+        }
+        
+        function updateAllEnumeratedOutputs() {
+            threadBoxes.forEach(box => {
+                if (box.editor) {
+                    handleInputChange(box.id, box.editor);
+                }
             });
         }
         
@@ -1250,6 +1291,7 @@
         
         // Event listeners
         document.getElementById('platform').addEventListener('change', updateAllLimits);
+        document.getElementById('enumerate').addEventListener('change', updateAllEnumeratedOutputs);
         
         document.getElementById('modalOverlay').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) {
