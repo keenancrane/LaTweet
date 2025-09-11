@@ -50,7 +50,22 @@
             background: #667eea;
             color: white;
             padding: 20px 30px;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .header-text {
             text-align: center;
+            flex: 1;
+        }
+        
+        .header .theme-toggle {
+            flex-shrink: 0;
+            margin-top: 10px;
         }
         
         .header h1 {
@@ -119,6 +134,28 @@
             font-size: 14px;
         }
         
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        
+        .checkbox-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: #666;
+            text-align: center;
+        }
+        
         .platform-selector select {
             padding: 8px 12px;
             border: 2px solid #ddd;
@@ -170,9 +207,34 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc;
+            background-color: #555;
             transition: .4s;
             border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6px;
+            font-size: 12px;
+        }
+        
+        .slider .moon-emoji,
+        .slider .sun-emoji {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            transition: opacity .4s;
+            pointer-events: none;
+        }
+        
+        .slider .moon-emoji {
+            left: 6px;
+            opacity: 0;
+        }
+        
+        .slider .sun-emoji {
+            right: 6px;
+            opacity: 1;
         }
         
         .slider:before {
@@ -192,7 +254,15 @@
         }
         
         input:checked + .slider:before {
-            transform: translateX(17px);
+            transform: translateX(26px);
+        }
+        
+        input:checked + .slider .moon-emoji {
+            opacity: 1;
+        }
+        
+        input:checked + .slider .sun-emoji {
+            opacity: 0;
         }
         
         .thread-container {
@@ -570,7 +640,7 @@
         }
         
         body.dark-mode .platform-selector label,
-        body.dark-mode .theme-toggle label {
+        body.dark-mode .checkbox-text {
             color: #b0b0b0;
         }
         
@@ -751,8 +821,23 @@
 <body>
     <div class="container">
         <div class="header">
-            <p><a href="https://github.com/keenancrane/latweet"><img src="logo.svg" width="200"></a></p>
-            <p>Long-form microblog authoring with rich text and math support.</p>
+            <div class="header-content">
+                <div class="header-text">
+                    <p><a href="https://github.com/keenancrane/latweet"><img src="logo.svg" width="200"></a></p>
+                    <p>Long-form microblog authoring with rich text and math support.</p>
+                </div>
+                <div class="theme-toggle">
+                    <label for="darkMode">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="darkMode" checked>
+                            <span class="slider">
+                                <span class="moon-emoji">🌙</span>
+                                <span class="sun-emoji">☀️</span>
+                            </span>
+                        </div>
+                    </label>
+                </div>
+            </div>
         </div>
         
         <div class="controls">
@@ -774,31 +859,22 @@
                     <option value="total">[&lt;i&gt;/&lt;N&gt;]</option>
                 </select>
             </div>
-            <div class="platform-selector">
-                <label for="smartBreaking">
+            <div class="checkbox-group">
+                <label for="smartBreaking" class="checkbox-label">
                     <input type="checkbox" id="smartBreaking" checked>
-                    Smart breaking
+                    <span class="checkbox-text">Smart breaking</span>
                 </label>
             </div>
-            <div class="platform-selector">
-                <label for="enableLatex">
+            <div class="checkbox-group">
+                <label for="enableLatex" class="checkbox-label">
                     <input type="checkbox" id="enableLatex" checked>
-                    LaTeX
+                    <span class="checkbox-text">LaTeX</span>
                 </label>
             </div>
-            <div class="platform-selector">
-                <label for="enableMarkdown">
+            <div class="checkbox-group">
+                <label for="enableMarkdown" class="checkbox-label">
                     <input type="checkbox" id="enableMarkdown" checked>
-                    Markdown
-                </label>
-            </div>
-            <div class="theme-toggle">
-                <label for="darkMode">
-                    <span class="toggle-text">Dark Mode</span>
-                    <div class="toggle-switch">
-                        <input type="checkbox" id="darkMode" checked>
-                        <span class="slider"></span>
-                    </div>
+                    <span class="checkbox-text">Markdown</span>
                 </label>
             </div>
         </div>
@@ -2106,7 +2182,7 @@ in.block.form();
 Likewise, you can write inline math like $x^2$ or display math like
 \\[\\int_\\mathcal{M} K dA = 2\\pi\\chi(\\mathcal{M}).\\]
 
-Threads that are too long automatically get split across multiple posts.
+Threads that are too long… …automatically get split across multiple posts.
 
 Also try out other features, like auto-enumeration of posts!
 
