@@ -1771,6 +1771,18 @@
             
             return '';
         }
+        
+        function getUnicodeOutputWithEnumeration(boxId) {
+            const box = threadBoxes.find(b => b.id === boxId);
+            if (!box || !box.editor) {
+                return '';
+            }
+            
+            const input = box.editor.getValue();
+            const baseOutput = convertLatexToUnicode(input);
+            const enumeration = getEnumerationString(boxId);
+            return baseOutput + enumeration;
+        }
 
         // Thread box management
         function createThreadBox(insertAfter = null) {
