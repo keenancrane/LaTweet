@@ -169,3 +169,8 @@ Math fonts:
 - **Enumeration**: Add post numbering (`None`, `[<i>/n]`, `[<i>/<N>]`)
 - **Smart Breaking**: Intelligent word-boundary splitting (enabled by default)
 - **Dark Mode**: Toggle between light and dark themes
+
+## Acknowledgements
+
+LaTweet! adapts code from <a href="https://github.com/svenkreiss/unicodeit">unicodeit</a>, <a href="https://github.com/DenverCoder1/unicode-formatter">unicode-formatter</a>, and <a href="https://github.com/twitter/twitter-text">twitter-text</a>.
+
