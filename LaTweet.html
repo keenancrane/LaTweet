@@ -32,6 +32,11 @@
             -moz-osx-font-smoothing: grayscale;
         }
         
+        /* Hide content during initial load - keep background visible */
+        body:not(.loaded) .container {
+            visibility: hidden;
+        }
+        
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -2088,10 +2093,51 @@
             }
         });
         
+        // Demo content for landing page
+        function loadDemoContent() {
+            const demoText = `Hello, La_Tweet!_
+
+Try _italic_/**bold** text with Markdown, or \\textit{with} \\textbf{LaTeX}.
+
+You can format \`code()\` inline or
+\`\`\`
+in.block.form();
+\`\`\`
+Likewise, you can write inline math like $x^2$ or display math like
+\\[\\int_\\mathcal{M} K dA = 2\\pi\\chi(\\mathcal{M}).\\]
+
+Threads that are too long automatically get split across multiple posts.
+
+Also try out other features, like auto-enumeration of posts!
+
+Check out the GitHub repo for more comprehensive documentation:
+
+https://github.com/keenancrane/latweet
+
+_(See the preview for a clickable link!)_`;
+
+            // Wait for the first box to be initialized
+            setTimeout(() => {
+                const firstBox = threadBoxes[0];
+                if (firstBox && firstBox.editor) {
+                    // Load the demo content
+                    simulateTyping(firstBox.id, firstBox.editor, demoText);
+                    
+                    // After content loads, snap to top and show everything
+                    setTimeout(() => {
+                        window.scrollTo(0, 0);
+                        document.body.classList.add('loaded');
+                        firstBox.editor.focus();
+                    }, 300);
+                }
+            }, 100);
+        }
+
         // Initialize with first thread box and dark mode
         document.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
             createThreadBox();
+            loadDemoContent();
         });
     </script>
 </body>
