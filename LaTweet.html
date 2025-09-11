@@ -1714,7 +1714,7 @@
         }
         
         function copyAllInput() {
-            // Concatenate all LaTeX input from all posts
+            // Concatenate all input from all posts
             const allInput = threadBoxes.map(box => {
                 if (box.editor) {
                     return box.editor.getValue();
@@ -1786,10 +1786,10 @@
             
             boxElement.innerHTML = `
                 <div class="box-header">
-                    <div class="box-number">Tweet <span class="box-count">1</span>/<span class="total-count">1</span></div>
+                    <div class="box-number">Post <span class="box-count">1</span>/<span class="total-count">1</span></div>
                     <div class="box-controls">
                         ${isFirst ? `
-                            <button class="copy-all-btn" onclick="copyAllInput()" title="Copy all LaTeX input">
+                            <button class="copy-all-btn" onclick="copyAllInput()" title="Copy all input">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                     <path d="m5 15v-11a2 2 0 0 1 2 -2h11"></path>
@@ -1801,7 +1801,7 @@
                 </div>
                 <div class="editor-section">
                     <div class="latex-input">
-                        <label>LaTeX Input:</label>
+                        <label>Input:</label>
                         <textarea id="latex-${boxId}"></textarea>
                     </div>
                     <div class="unicode-output">
