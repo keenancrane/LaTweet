@@ -6,33 +6,82 @@ Long-form microblog authoring tool with rich text and LaTeX.
 
 ## Overview
 
-**LaTweet** is a long-form microblog authoring tool that helps you write threaded posts with rich text formatting and LaTeX mathematical expressions. Perfect for academics, researchers, and anyone who needs to share complex content across Twitter, Threads, BlueSky, Mastodon, and other microblogging platforms.
+**LaTweet!** converts LaTeX markup to Unicode for posting on social media platforms. Write mathematical expressions and formatted text that displays correctly on Twitter, Threads, BlueSky, Mastodon, and other microblogging sites.
 
-## Running
+## Installing and Running
 
-Should work in most browsers with JavaScript enabled. No installation required - just open `LaTweet.html` in your browser!
+To install locally, you just need three files:
 
-## Features
+- `LaTweet.html`
+- `unicode-data.js`
+- `logo.svg`
 
-### **Rich Text & Math Support**
-- **LaTeX Math**: Inline math with `\(...\)` or `$...$`, display math with `\[...\]`
-- **Text Formatting**: Bold (`\textbf{}`), italic (`\textit{}`), monospace (`\texttt{}`), and more
-- **Unicode Conversion**: Automatically converts LaTeX to Unicode symbols for universal compatibility
-- **Real-time Preview**: See your formatted output instantly as you type
+Alternatively, you can clone the whole repository <a href="https://github.com/keenancrane/latweet">github.com/keenancrane/latweet</a>.
 
-### **Smart Threading**
-- **Auto-splitting**: Automatically breaks long content into multiple posts
-- **Character Limits**: Supports platform-specific limits (Twitter 280, Threads/Mastodon 500, etc.)
-- **Smart Breaking**: Respects word boundaries and never breaks LaTeX expressions
-- **Manual Control**: Add, delete, and reorder posts anywhere in your thread
+You should then be able to open `LaTweet.html` in any modern browser.  No further setup or dependencies need to be installed locally.  However, you must be connected to the internet (in order to load packages via CDN.)
 
-### **Quality of Life**
-- **Image Support**: Drag-and-drop or paste images directly into posts
-- **Enumeration**: Optionally number your posts with `[1/n]` or `[1/3]` patterns
-- **Clickable URLs**: URLs automatically become clickable links in the preview
-- **Copy to Clipboard**: One-click copying of formatted text and images
-- **Paste & Split**: Paste large text blocks and automatically split into threads
-- **Syntax Highlighting**: CodeMirror editor with LaTeX syntax highlighting
+## Usage
+
+### LaTeX Math
+
+Mathematical expressions can be written using standard LaTeX syntax. The tool converts them to Unicode symbols, following the same conventions as <a href="https://www.unicodeit.net/">unicodeit</a>, plus a few extra features.
+
+**Inline math** using `\(...\)` or `$...$`:
+```
+The quadratic formula is \(x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}\).
+```
+→ The quadratic formula is x = (-b ± √(b² - 4ac))/2a.
+
+**Display math** using `\[...\]` with automatic centering:
+```
+\[E = mc^2\]
+```
+→
+
+　　E = mc²
+
+### Text Formatting
+
+Standard LaTeX commands can be used for rich text formatting.  For example:
+
+```
+\textbf{Bold text}, \textit{italic text}, and \texttt{monospace code}.
+```
+→ **Bold text**, *italic text*, and `monospace code`.
+
+### Threading
+
+The tool automatically splits long content into multiple posts based on the target platform's character limits (which can be selected from the dropdown at top).
+
+**Auto-splitting**: When you exceed the limit while typing in the final post, a new post is automatically created.
+
+**Smart breaking**: When this option is enabled, text will be broken at word boundaries. URLs and LaTeX expressions are not split across posts.
+
+**Paste & Split**: If a large text block is pasted, and smart breaking is enabled, the pasted input will automatically be split into posts.
+
+### Post Enumeration
+
+Optional numbering can be added to your thread posts.
+
+**Options**:
+- `None`: No numbering
+- `[<i>/n]`: Shows `[1/n]`, `[2/n]`, etc. (literal "n")
+- `[<i>/<N>]`: Shows `[1/3]`, `[2/3]`, `[3/3]` (actual total count)
+
+The enumeration is appended to each post's output and automatically accounted for in the character count.
+
+### Images
+
+One image per post can be attached by dragging and dropping or pasting from clipboard.
+
+**Drag & drop**: Drop image files onto any post box.
+**Paste**: Copy an image (screenshot, etc.) and paste with Ctrl/Cmd+V.
+**Copy**: Use the image copy button to copy for pasting into social media.
+**Remove**: Click the X button in the upper-right corner of the image.
+
+### Backup and Restore
+
+**Copy Source**: Button in the first post header copies all LaTeX input from all posts (separated by newlines).  This source can be pasted back in later to continue editing a thread.
 
 ## LaTeX Support
 

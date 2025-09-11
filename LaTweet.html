@@ -62,6 +62,37 @@
             font-weight: 400;
         }
         
+        .copy-all-btn {
+            background: transparent;
+            color: #666;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .copy-all-btn:hover {
+            background: #f8f9fa;
+            color: #2ed573;
+            border-color: #2ed573;
+            transform: translateY(-1px);
+        }
+        
+        .copy-all-btn svg {
+            transition: all 0.2s ease;
+        }
+        
+        .copy-all-btn:hover svg {
+            transform: scale(1.1);
+        }
+        
         .controls {
             padding: 20px 30px;
             background: #fafafa;
@@ -622,6 +653,18 @@
             background: rgba(255, 255, 255, 0.7);
         }
         
+        body.dark-mode .copy-all-btn {
+            background: transparent;
+            color: #b0b0b0;
+            border: 1px solid #555;
+        }
+        
+        body.dark-mode .copy-all-btn:hover {
+            background: #404040;
+            color: #48bb78;
+            border-color: #48bb78;
+        }
+        
         body.dark-mode .char-counter {
             background: rgba(45, 45, 45, 0.95);
             border-color: #555;
@@ -703,7 +746,7 @@
 <body>
     <div class="container">
         <div class="header">
-           <p><a href="https://github.com/keenancrane/latweet"><img src="logo.svg" width="200"></a></p>
+            <p><a href="https://github.com/keenancrane/latweet"><img src="logo.svg" width="200"></a></p>
             <p>Long-form microblog authoring tool with rich text and LaTeX.</p>
         </div>
         
@@ -1371,6 +1414,45 @@
                 alert('Failed to copy image to clipboard');
             }
         }
+        
+        function copyAllInput() {
+            // Concatenate all LaTeX input from all posts
+            const allInput = threadBoxes.map(box => {
+                if (box.editor) {
+                    return box.editor.getValue();
+                }
+                return '';
+            }).join('\n\n');
+            
+            if (!allInput.trim()) {
+                alert('No content to copy!');
+                return;
+            }
+            
+            navigator.clipboard.writeText(allInput).then(() => {
+                const copyBtn = document.querySelector('.copy-all-btn');
+                const originalContent = copyBtn.innerHTML;
+                
+                // Show success state
+                copyBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20,6 9,17 4,12"></polyline>
+                    </svg>
+                    Copied!
+                `;
+                copyBtn.style.background = 'rgba(46, 213, 115, 0.2)';
+                copyBtn.style.borderColor = 'rgba(46, 213, 115, 0.5)';
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalContent;
+                    copyBtn.style.background = '';
+                    copyBtn.style.borderColor = '';
+                }, 1500);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
 
         // Get enumeration string for a thread box
         function getEnumerationString(boxId) {
@@ -1408,7 +1490,15 @@
                 <div class="box-header">
                     <div class="box-number">Tweet <span class="box-count">1</span>/<span class="total-count">1</span></div>
                     <div class="box-controls">
-                        ${!isFirst ? `<button class="delete-box" onclick="showDeleteModal(${boxId})">×</button>` : ''}
+                        ${isFirst ? `
+                            <button class="copy-all-btn" onclick="copyAllInput()" title="Copy all LaTeX input">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="m5 15v-11a2 2 0 0 1 2 -2h11"></path>
+                                </svg>
+                                Copy Source
+                            </button>
+                        ` : `<button class="delete-box" onclick="showDeleteModal(${boxId})">×</button>`}
                     </div>
                 </div>
                 <div class="editor-section">
