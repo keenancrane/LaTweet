@@ -747,7 +747,7 @@
     <div class="container">
         <div class="header">
             <p><a href="https://github.com/keenancrane/latweet"><img src="logo.svg" width="200"></a></p>
-            <p>Long-form microblog authoring tool with rich text and LaTeX.</p>
+            <p>Long-form microblog authoring with rich text and math support.</p>
         </div>
         
         <div class="controls">
@@ -773,6 +773,18 @@
                 <label for="smartBreaking">
                     <input type="checkbox" id="smartBreaking" checked>
                     Smart breaking
+                </label>
+            </div>
+            <div class="platform-selector">
+                <label for="enableLatex">
+                    <input type="checkbox" id="enableLatex" checked>
+                    LaTeX
+                </label>
+            </div>
+            <div class="platform-selector">
+                <label for="enableMarkdown">
+                    <input type="checkbox" id="enableMarkdown" checked>
+                    Markdown
                 </label>
             </div>
             <div class="theme-toggle">
@@ -1081,12 +1093,175 @@
             return replaceUnicode(mathContent);
         }
         
-        // Main conversion function
-        function convertLatexToUnicode(input) {
-            let result = input;
+        // Markdown processing functions
+        function processMarkdownCode(text) {
+            // Process triple backtick code blocks
+            text = text.replace(/```[\s\S]*?```/g, (match) => {
+                // Convert everything inside to monospace, including any LaTeX
+                const codeContent = match.slice(3, -3);
+                return convertToMonospace(codeContent);
+            });
             
+            // Process single backtick inline code
+            text = text.replace(/`([^`]+)`/g, (match, codeContent) => {
+                return convertToMonospace(codeContent);
+            });
+            
+            return text;
+        }
+        
+        function convertToMonospace(text) {
+            // Convert text to Unicode monospace characters
+            const monospaceMap = {
+                'a': '𝚊', 'b': '𝚋', 'c': '𝚌', 'd': '𝚍', 'e': '𝚎', 'f': '𝚏', 'g': '𝚐', 'h': '𝚑', 'i': '𝚒', 'j': '𝚓',
+                'k': '𝚔', 'l': '𝚕', 'm': '𝚖', 'n': '𝚗', 'o': '𝚘', 'p': '𝚙', 'q': '𝚚', 'r': '𝚛', 's': '𝚜', 't': '𝚝',
+                'u': '𝚞', 'v': '𝚟', 'w': '𝚠', 'x': '𝚡', 'y': '𝚢', 'z': '𝚣',
+                'A': '𝙰', 'B': '𝙱', 'C': '𝙲', 'D': '𝙳', 'E': '𝙴', 'F': '𝙵', 'G': '𝙶', 'H': '𝙷', 'I': '𝙸', 'J': '𝙹',
+                'K': '𝙺', 'L': '𝙻', 'M': '𝙼', 'N': '𝙽', 'O': '𝙾', 'P': '𝙿', 'Q': '𝚀', 'R': '𝚁', 'S': '𝚂', 'T': '𝚃',
+                'U': '𝚄', 'V': '𝚅', 'W': '𝚆', 'X': '𝚇', 'Y': '𝚈', 'Z': '𝚉',
+                '0': '𝟶', '1': '𝟷', '2': '𝟸', '3': '𝟹', '4': '𝟺', '5': '𝟻', '6': '𝟼', '7': '𝟽', '8': '𝟾', '9': '𝟿'
+            };
+            
+            return text.split('').map(char => monospaceMap[char] || char).join('');
+        }
+        
+        function freezeSegments(text) {
+            const segments = [];
+            let result = text;
+            let segmentId = 0;
+            
+            // Freeze LaTeX math expressions (display math)
+            result = result.replace(/\s*\\\[\s*[\s\S]*?\s*\\\]\s*/g, (match) => {
+                const id = `§FROZEN§${segmentId++}§`;
+                segments.push({ id, content: match, type: 'latex' });
+                return id;
+            });
+            
+            // Freeze LaTeX math expressions (inline math - parentheses)
+            result = result.replace(/\\\([^\\]*?(?:\\.[^\\]*?)*\\\)/g, (match) => {
+                const id = `§FROZEN§${segmentId++}§`;
+                segments.push({ id, content: match, type: 'latex' });
+                return id;
+            });
+            
+            // Freeze LaTeX math expressions (inline math - dollar signs)
+            result = result.replace(/\$[^$]+\$/g, (match) => {
+                const id = `§FROZEN§${segmentId++}§`;
+                segments.push({ id, content: match, type: 'latex' });
+                return id;
+            });
+            
+            // Freeze LaTeX text commands
+            result = result.replace(/\\(?:textbf|textit|emph|texttt)\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g, (match) => {
+                const id = `§FROZEN§${segmentId++}§`;
+                segments.push({ id, content: match, type: 'latex' });
+                return id;
+            });
+            
+            // Freeze URLs
+            result = result.replace(/https?:\/\/[^\s]+/g, (match) => {
+                const id = `§FROZEN§${segmentId++}§`;
+                segments.push({ id, content: match, type: 'url' });
+                return id;
+            });
+            
+            return { text: result, segments };
+        }
+        
+        function processMarkdownFormatting(text) {
+            // Process Markdown formatting on unfrozen text
+            // Handle escaped characters first
+            text = text.replace(/\\([*_`])/g, '__ESCAPED_$1__');
+            
+            // Bold and italic (***text***)
+            text = text.replace(/\*\*\*([^*]+)\*\*\*/g, (match, content) => {
+                return convertToBoldItalic(content);
+            });
+            
+            // Bold (**text**)
+            text = text.replace(/\*\*([^*]+)\*\*/g, (match, content) => {
+                return convertToBold(content);
+            });
+            
+            // Italic (*text*)
+            text = text.replace(/\*([^*]+)\*/g, (match, content) => {
+                return convertToItalic(content);
+            });
+            
+            // Bold (__text__)
+            text = text.replace(/__([^_]+)__/g, (match, content) => {
+                return convertToBold(content);
+            });
+            
+            // Italic (_text_)
+            text = text.replace(/_([^_]+)_/g, (match, content) => {
+                return convertToItalic(content);
+            });
+            
+            // Restore escaped characters
+            text = text.replace(/__ESCAPED_([*_`])__/g, '$1');
+            
+            return text;
+        }
+        
+        function convertToBold(text) {
+            const boldMap = {
+                'a': '𝐚', 'b': '𝐛', 'c': '𝐜', 'd': '𝐝', 'e': '𝐞', 'f': '𝐟', 'g': '𝐠', 'h': '𝐡', 'i': '𝐢', 'j': '𝐣',
+                'k': '𝐤', 'l': '𝐥', 'm': '𝐦', 'n': '𝐧', 'o': '𝐨', 'p': '𝐩', 'q': '𝐪', 'r': '𝐫', 's': '𝐬', 't': '𝐭',
+                'u': '𝐮', 'v': '𝐯', 'w': '𝐰', 'x': '𝐱', 'y': '𝐲', 'z': '𝐳',
+                'A': '𝐀', 'B': '𝐁', 'C': '𝐂', 'D': '𝐃', 'E': '𝐄', 'F': '𝐅', 'G': '𝐆', 'H': '𝐇', 'I': '𝐈', 'J': '𝐉',
+                'K': '𝐊', 'L': '𝐋', 'M': '𝐌', 'N': '𝐍', 'O': '𝐎', 'P': '𝐏', 'Q': '𝐐', 'R': '𝐑', 'S': '𝐒', 'T': '𝐓',
+                'U': '𝐔', 'V': '𝐕', 'W': '𝐖', 'X': '𝐗', 'Y': '𝐘', 'Z': '𝐙',
+                '0': '𝟎', '1': '𝟏', '2': '𝟐', '3': '𝟑', '4': '𝟒', '5': '𝟓', '6': '𝟔', '7': '𝟕', '8': '𝟖', '9': '𝟗'
+            };
+            
+            return text.split('').map(char => boldMap[char] || char).join('');
+        }
+        
+        function convertToItalic(text) {
+            const italicMap = {
+                'a': '𝑎', 'b': '𝑏', 'c': '𝑐', 'd': '𝑑', 'e': '𝑒', 'f': '𝑓', 'g': '𝑔', 'h': 'ℎ', 'i': '𝑖', 'j': '𝑗',
+                'k': '𝑘', 'l': '𝑙', 'm': '𝑚', 'n': '𝑛', 'o': '𝑜', 'p': '𝑝', 'q': '𝑞', 'r': '𝑟', 's': '𝑠', 't': '𝑡',
+                'u': '𝑢', 'v': '𝑣', 'w': '𝑤', 'x': '𝑥', 'y': '𝑦', 'z': '𝑧',
+                'A': '𝐴', 'B': '𝐵', 'C': '𝐶', 'D': '𝐷', 'E': '𝐸', 'F': '𝐹', 'G': '𝐺', 'H': '𝐻', 'I': '𝐼', 'J': '𝐽',
+                'K': '𝐾', 'L': '𝐿', 'M': '𝑀', 'N': '𝑁', 'O': '𝑂', 'P': '𝑃', 'Q': '𝑄', 'R': '𝑅', 'S': '𝑆', 'T': '𝑇',
+                'U': '𝑈', 'V': '𝑉', 'W': '𝑊', 'X': '𝑋', 'Y': '𝑌', 'Z': '𝑍'
+            };
+            
+            return text.split('').map(char => italicMap[char] || char).join('');
+        }
+        
+        function convertToBoldItalic(text) {
+            const boldItalicMap = {
+                'a': '𝒂', 'b': '𝒃', 'c': '𝒄', 'd': '𝒅', 'e': '𝒆', 'f': '𝒇', 'g': '𝒈', 'h': '𝒉', 'i': '𝒊', 'j': '𝒋',
+                'k': '𝒌', 'l': '𝒍', 'm': '𝒎', 'n': '𝒏', 'o': '𝒐', 'p': '𝒑', 'q': '𝒒', 'r': '𝒓', 's': '𝒔', 't': '𝒕',
+                'u': '𝒖', 'v': '𝒗', 'w': '𝒘', 'x': '𝒙', 'y': '𝒚', 'z': '𝒛',
+                'A': '𝑨', 'B': '𝑩', 'C': '𝑪', 'D': '𝑫', 'E': '𝑬', 'F': '𝑭', 'G': '𝑮', 'H': '𝑯', 'I': '𝑰', 'J': '𝑱',
+                'K': '𝑲', 'L': '𝑳', 'M': '𝑴', 'N': '𝑵', 'O': '𝑶', 'P': '𝑷', 'Q': '𝑸', 'R': '𝑹', 'S': '𝑺', 'T': '𝑻',
+                'U': '𝑼', 'V': '𝑽', 'W': '𝑾', 'X': '𝑿', 'Y': '𝒀', 'Z': '𝒁'
+            };
+            
+            return text.split('').map(char => boldItalicMap[char] || char).join('');
+        }
+        
+        function unfreezeSegments(text, segments) {
+            let result = text;
+            
+            // Replace frozen segments back with their processed content
+            segments.forEach(segment => {
+                if (segment.type === 'latex') {
+                    result = result.replace(segment.id, processLatexSegment(segment.content));
+                } else if (segment.type === 'url') {
+                    result = result.replace(segment.id, segment.content);
+                }
+            });
+            
+            return result;
+        }
+        
+        function processLatexSegment(content) {
             // Process display math delimiters \[ ... \]
-            result = result.replace(/\s*\\\[\s*(.*?)\s*\\\]\s*/gs, (match, mathContent) => {
+            content = content.replace(/\s*\\\[\s*(.*?)\s*\\\]\s*/gs, (match, mathContent) => {
                 // Strip internal newlines and whitespace, then process
                 const cleanMathContent = mathContent.replace(/\s+/g, ' ').trim();
                 const processedMath = processMathContent(cleanMathContent);
@@ -1095,16 +1270,58 @@
             });
             
             // Process inline math delimiters \( ... \) and $ ... $
-            result = result.replace(/\\\((.*?)\\\)/g, (match, mathContent) => {
+            content = content.replace(/\\\((.*?)\\\)/g, (match, mathContent) => {
                 return processMathContent(mathContent);
             });
             
-            result = result.replace(/\$([^$]+)\$/g, (match, mathContent) => {
+            content = content.replace(/\$([^$]+)\$/g, (match, mathContent) => {
                 return processMathContent(mathContent);
             });
             
             // Process text formatting outside of math mode
-            result = applyTextFormatting(result);
+            content = applyTextFormatting(content);
+            
+            return content;
+        }
+        
+        // Main conversion function with multi-stage processing
+        function convertLatexToUnicode(input) {
+            const enableLatex = document.getElementById('enableLatex').checked;
+            const enableMarkdown = document.getElementById('enableMarkdown').checked;
+            
+            let result = input;
+            
+            // Stage A: Process inline code and code blocks (if Markdown enabled)
+            if (enableMarkdown) {
+                result = processMarkdownCode(result);
+            }
+            
+            // Stage B: Freeze LaTeX and URL segments (if either is enabled)
+            let segments = [];
+            if (enableLatex || enableMarkdown) {
+                const frozen = freezeSegments(result);
+                result = frozen.text;
+                segments = frozen.segments;
+            }
+            
+            // Stage C: Process Markdown formatting on unfrozen text (if Markdown enabled)
+            if (enableMarkdown) {
+                result = processMarkdownFormatting(result);
+            }
+            
+            // Stage D: Unfreeze and process LaTeX segments (if LaTeX enabled)
+            if (enableLatex) {
+                result = unfreezeSegments(result, segments);
+            } else {
+                // If LaTeX is disabled, just put back the original content without processing
+                segments.forEach(segment => {
+                    if (segment.type === 'latex') {
+                        result = result.replace(segment.id, segment.content);
+                    } else if (segment.type === 'url') {
+                        result = result.replace(segment.id, segment.content);
+                    }
+                });
+            }
             
             return result;
         }
@@ -1841,6 +2058,8 @@
         // Event listeners
         document.getElementById('platform').addEventListener('change', updateAllLimits);
         document.getElementById('enumerate').addEventListener('change', updateAllEnumeratedOutputs);
+        document.getElementById('enableLatex').addEventListener('change', updateAllEnumeratedOutputs);
+        document.getElementById('enableMarkdown').addEventListener('change', updateAllEnumeratedOutputs);
         
         document.getElementById('modalOverlay').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) {

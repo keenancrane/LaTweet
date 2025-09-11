@@ -2,11 +2,11 @@
   <img width="400" src="logo-readme.svg">
 </p>
 
-Long-form microblog authoring tool with rich text and LaTeX.
+Long-form microblog authoring with rich text and math support.
 
 ## Overview
 
-**LaTweet!** converts LaTeX markup to Unicode for posting on social media platforms. Write mathematical expressions and formatted text that displays correctly on Twitter, Threads, BlueSky, Mastodon, and other microblogging sites.
+**LaTweet!** converts Markdown and LaTeX markup to Unicode suitable for microblogging sites (Twitter, Threads, BlueSky, Mastodon, etc.), but can also be useful for general conversion to Unicode for other purposes (e.g., communicating math over email).  Longer threads are automatically split into multiple posts, with adjustable per-post character limits, and the ability to add numbering or images to post drafts.  It runs in the browser, providing real-time feedback as you type.
 
 ## Installing and Running
 
@@ -48,6 +48,62 @@ Standard LaTeX commands can be used for rich text formatting.  For example:
 \textbf{Bold text}, \textit{italic text}, and \texttt{monospace code}.
 ```
 → **Bold text**, *italic text*, and `monospace code`.
+
+### Markdown Formatting
+
+Standard Markdown syntax can be used alongside LaTeX. Markdown is processed only outside of LaTeX expressions.
+
+**Bold text** using `**text**` or `__text__`:
+```
+**Bold text** and __also bold__.
+```
+→ **𝐁𝐨𝐥𝐝 𝐭𝐞𝐱𝐭** and **𝐚𝐥𝐬𝐨 𝐛𝐨𝐥𝐝**.
+
+**Italic text** using `*text*` or `_text_`:
+```
+*Italic text* and _also italic_.
+```
+→ *𝐼𝑡𝑎𝑙𝑖𝑐 𝑡𝑒𝑥𝑡* and *𝑎𝑙𝑠𝑜 𝑖𝑡𝑎𝑙𝑖𝑐*.
+
+**Bold italic** using `***text***`:
+```
+***Bold and italic text***.
+```
+→ ***𝒃𝒐𝒍𝒅 𝒂𝒏𝒅 𝒊𝒕𝒂𝒍𝒊𝒄 𝒕𝒆𝒙𝒕***.
+
+**Inline code** using `` `text` ``:
+```
+Use `console.log()` to debug.
+```
+→ Use `𝚌𝚘𝚗𝚜𝚘𝚕𝚎.𝚕𝚘𝚐()` to debug.
+
+**Code blocks** using triple backticks:
+````
+```
+function hello() {
+    return "world";
+}
+```
+````
+→ 
+```
+𝚏𝚞𝚗𝚌𝚝𝚒𝚘𝚗 𝚑𝚎𝚕𝚕𝚘() {
+    𝚛𝚎𝚝𝚞𝚛𝚗 "𝚠𝚘𝚛𝚕𝚍";
+}
+```
+
+**Mixing LaTeX and Markdown**: LaTeX expressions are protected from Markdown processing:
+```
+The formula $E = mc^2$ is **very important** in physics.
+```
+→ The formula E = mc² is **𝐯𝐞𝐫𝐲 𝐢𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭** in physics.
+
+### Formatting Controls
+
+Use the checkboxes in the top toolbar to enable/disable LaTeX and Markdown processing independently:
+
+- **LaTeX formatting**: Enables `\textbf{}`, `$...$`, `\(...\)`, `\[...\]`, etc.
+- **Markdown formatting**: Enables `**bold**`, `*italic*`, `` `code` ``, etc.
 
 ### Threading
 
