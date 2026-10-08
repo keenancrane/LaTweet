@@ -2,7 +2,9 @@
   <img width="400" src="logo-readme.svg">
 </p>
 
-Long-form microblog authoring with rich text and math support.
+Long-form microblog authoring with rich text and math support.  Use it live at
+
+<https://keenancrane.github.io/LaTweet/>
 
 ## Overview
 
